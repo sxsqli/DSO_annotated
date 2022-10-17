@@ -30,7 +30,9 @@
 namespace dso
 {
 
-
+/**
+ * 图片数据与曝光时间
+*/
 class ImageAndExposure
 {
 public:

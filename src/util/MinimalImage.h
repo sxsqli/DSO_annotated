@@ -30,6 +30,10 @@
 namespace dso
 {
 
+/**
+ * DSO自己实现的图片对象最小集
+ * 只包含基本数据以及克隆和一些像素赋值操作
+*/
 template<typename T>
 class MinimalImage
 {
