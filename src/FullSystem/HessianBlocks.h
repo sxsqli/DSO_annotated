@@ -106,7 +106,9 @@ struct FrameFramePrecalc
 
 
 
-
+/**
+ * 帧
+*/
 struct FrameHessian
 {
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
