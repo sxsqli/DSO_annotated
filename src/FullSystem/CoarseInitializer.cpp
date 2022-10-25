@@ -927,6 +927,7 @@ void CoarseInitializer::applyStep(int lvl)
 	std::swap<Vec10f*>(JbBuffer, JbBuffer_new);
 }
 
+// 生成图像金字塔的内参
 void CoarseInitializer::makeK(CalibHessian* HCalib)
 {
 	w[0] = wG[0];
