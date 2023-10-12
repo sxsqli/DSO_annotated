@@ -588,9 +588,11 @@ void Undistort::applyBlurNoise(float* img) const
 void Undistort::makeOptimalK_crop()
 {
 	printf("finding CROP optimal new model!\n");
+	// K设置为单位矩阵，下面调用distortCoordinates相当与从归一化坐标投影到输入图像坐标
 	K.setIdentity();
 
 	// 1. stretch the center lines as far as possible, to get initial coarse quess.
+	// 先从中心十字上找到能投影到图像上的大致范围
 	float* tgX = new float[100000];
 	float* tgY = new float[100000];
 	float minX = 0;
@@ -600,6 +602,7 @@ void Undistort::makeOptimalK_crop()
 
 	for(int x=0; x<100000;x++)
 	{tgX[x] = (x-50000.0f) / 10000.0f; tgY[x] = 0;}
+	// x从-5到5，y为0，找到能投影到图像上的点的范围
 	distortCoordinates(tgX, tgY,tgX, tgY,100000);
 	for(int x=0; x<100000;x++)
 	{
@@ -611,6 +614,7 @@ void Undistort::makeOptimalK_crop()
 	}
 	for(int y=0; y<100000;y++)
 	{tgY[y] = (y-50000.0f) / 10000.0f; tgX[y] = 0;}
+	// y从-5到5，x为0，找到能投影到图像上的点的范围
 	distortCoordinates(tgX, tgY,tgX, tgY,100000);
 	for(int y=0; y<100000;y++)
 	{
@@ -623,6 +627,7 @@ void Undistort::makeOptimalK_crop()
 	delete[] tgX;
 	delete[] tgY;
 
+	// 再往外扩一点
 	minX *= 1.01;
 	maxX *= 1.01;
 	minY *= 1.01;
@@ -636,6 +641,7 @@ void Undistort::makeOptimalK_crop()
 
 	// 2. while there are invalid pixels at the border: shrink square at the side that has invalid pixels,
 	// if several to choose from, shrink the wider dimension.
+	// 投影四条边框到图像坐标系上，测试是否全部落在图像中，不断缩小，直到满足要求
 	bool oobLeft=true, oobRight=true, oobTop=true, oobBottom=true;
 	int iteration=0;
 	while(oobLeft || oobRight || oobTop || oobBottom)
@@ -647,6 +653,7 @@ void Undistort::makeOptimalK_crop()
 			remapX[y*2+1] = maxX;
 			remapY[y*2] = remapY[y*2+1] = minY + (maxY-minY) * (float)y / ((float)h-1.0f);
 		}
+		// 左右两边框，x分别为最大和最小，y从最小到最大
 		distortCoordinates(remapX, remapY,remapX, remapY,2*h);
 		for(int y=0;y<h;y++)
 		{
@@ -664,6 +671,7 @@ void Undistort::makeOptimalK_crop()
 			remapY[x*2+1] = maxY;
 			remapX[x*2] = remapX[x*2+1] = minX + (maxX-minX) * (float)x / ((float)w-1.0f);
 		}
+		// 上下两边框，y分别为最大和最小，x从最小到最大
 		distortCoordinates(remapX, remapY,remapX, remapY,2*w);
 
 
@@ -675,7 +683,7 @@ void Undistort::makeOptimalK_crop()
 				oobBottom = true;
 		}
 
-
+		// 优先缩短较长的边
 		if((oobLeft || oobRight) && (oobTop || oobBottom))
 		{
 			if((maxX-minX) > (maxY-minY))
@@ -700,11 +708,17 @@ void Undistort::makeOptimalK_crop()
 		}
 	}
 
+	// 利用x、y的范围计算投影图像的K
+	// fx * maxX + cx = w - 1;
+	// fy * maxY + cy = h - 1;
+	// fx * minX + cx = 0;
+	// fy * minY + cy = 0;
+	// 下面由上述式子推导
 	K(0,0) = ((float)w-1.0f)/(maxX-minX);
 	K(1,1) = ((float)h-1.0f)/(maxY-minY);
 	K(0,2) = -minX*K(0,0);
 	K(1,2) = -minY*K(1,1);
-
+	// K设置后，调用distortCoordinates则表示从投影图像投影到输入图像
 }
 
 void Undistort::makeOptimalK_full()
